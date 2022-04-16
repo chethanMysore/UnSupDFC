@@ -74,7 +74,7 @@ if __name__ == '__main__':
                         help="To use half precision on model weights.")
     parser.add_argument("-num_conv",
                         type=int,
-                        default=3,
+                        default=5,
                         help="Batch size for training")
     parser.add_argument("-batch_size",
                         type=int,
