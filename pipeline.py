@@ -185,7 +185,7 @@ class Pipeline:
                     ignore, class_assignments = torch.max(normalised_res_map, 1)
 
                     # Compute Similarity Loss
-                    similarity_loss = self.similarity_loss(normalised_res_map, class_assignments)
+                    similarity_loss = self.similarity_loss(normalised_res_map, class_assignments.float())
 
                     # Propogate the class probabilities to pixels/voxels
                     local_batch_shape = local_batch.shape
