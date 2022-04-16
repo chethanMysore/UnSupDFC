@@ -90,7 +90,7 @@ if __name__ == '__main__':
                         help="Learning rate")
     parser.add_argument("-patch_size",
                         type=int,
-                        default=64,
+                        default=32,
                         help="Patch size of the input volume")
     parser.add_argument("-stride_depth",
                         type=int,
