@@ -32,11 +32,11 @@ class ConvComponent3D(nn.Module):
         if not no_relu:
             self.conv.add_module("p_relu_1", nn.PReLU(init=0.25))
         self.conv.add_module("bn_1", nn.BatchNorm3d(num_features=out_channels))
-        self.conv.add_module("conv_2", nn.Conv3d(in_channels=out_channels, out_channels=out_channels, kernel_size=k_size,
-                                                 stride=stride, padding=padding, bias=bias))
-        if not no_relu:
-            self.conv.add_module("p_relu_2", nn.PReLU(init=0.25))
-        self.conv.add_module("bn_2", nn.BatchNorm3d(num_features=out_channels))
+        # self.conv.add_module("conv_2", nn.Conv3d(in_channels=out_channels, out_channels=out_channels, kernel_size=k_size,
+        #                                          stride=stride, padding=padding, bias=bias))
+        # if not no_relu:
+        #     self.conv.add_module("p_relu_2", nn.PReLU(init=0.25))
+        # self.conv.add_module("bn_2", nn.BatchNorm3d(num_features=out_channels))
 
     def forward(self, x):
         x = self.conv(x)

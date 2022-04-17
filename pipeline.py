@@ -185,11 +185,11 @@ class Pipeline:
                     ignore, class_assignments = torch.max(normalised_res_map, 1)
 
                     # Compute Similarity Loss
-                    similarity_loss = self.similarity_loss(normalised_res_map, class_assignments.float())
+                    similarity_loss = self.similarity_loss(normalised_res_map, class_assignments)
 
                     # Propogate the class probabilities to pixels/voxels
                     local_batch_shape = local_batch.shape
-                    class_assignments = class_assignments.reshape(local_batch_shape).float()
+                    class_probablilities = class_assignments.reshape(local_batch_shape).float()
 
                     # Spatial Continuity comparison
                     cont_width_target = torch.zeros((local_batch_shape[0], local_batch_shape[1],
@@ -201,15 +201,15 @@ class Pipeline:
                     cont_height_target = torch.zeros((local_batch_shape[0], local_batch_shape[1],
                                                      local_batch_shape[2], local_batch_shape[3],
                                                      local_batch_shape[4]-1)).float().cuda()
-                    cont_width_op = class_assignments[:, :, 1:, :, :] - class_assignments[:, :, 0:-1, :, :]
-                    cont_length_op = class_assignments[:, :, :, 1:, :] - class_assignments[:, :, :, 0:-1, :]
-                    cont_height_op = class_assignments[:, :, :, :, 1:] - class_assignments[:, :, :, :, 0:-1]
+                    cont_width_op = class_probablilities[:, :, 1:, :, :] - class_probablilities[:, :, 0:-1, :, :]
+                    cont_length_op = class_probablilities[:, :, :, 1:, :] - class_probablilities[:, :, :, 0:-1, :]
+                    cont_height_op = class_probablilities[:, :, :, :, 1:] - class_probablilities[:, :, :, :, 0:-1]
                     continuity_loss_width = self.continuity_loss(cont_width_op, cont_width_target)
                     continuity_loss_length = self.continuity_loss(cont_length_op, cont_length_target)
                     continuity_loss_height = self.continuity_loss(cont_height_op, cont_height_target)
                     avg_continuity_loss = (continuity_loss_width + continuity_loss_length + continuity_loss_height) / 3
 
-                    loss = (self.sim_loss_coeff * similarity_loss) + (self.cont_loss_coeff * avg_continuity_loss)
+                    loss = similarity_loss + (self.cont_loss_coeff * avg_continuity_loss)
 
                 # except Exception as error:
                 #     self.logger.exception(error)
@@ -320,11 +320,11 @@ class Pipeline:
                         ignore, class_assignments = torch.max(normalised_res_map, 1)
 
                         # Compute Similarity Loss
-                        similarity_loss = self.similarity_loss(normalised_res_map, class_assignments.float())
+                        similarity_loss = self.similarity_loss(normalised_res_map, class_assignments)
 
                         # Propogate the class probabilities to pixels/voxels
                         local_batch_shape = local_batch.shape
-                        class_assignments = class_assignments.reshape(local_batch_shape).float()
+                        class_probablilities = class_assignments.reshape(local_batch_shape).float()
 
                         # Spatial Continuity comparison
                         cont_width_target = torch.zeros((local_batch_shape[0], local_batch_shape[1],
@@ -336,16 +336,16 @@ class Pipeline:
                         cont_height_target = torch.zeros((local_batch_shape[0], local_batch_shape[1],
                                                           local_batch_shape[2], local_batch_shape[3],
                                                           local_batch_shape[4] - 1)).float().cuda()
-                        cont_width_op = class_assignments[:, :, 1:, :, :] - class_assignments[:, :, 0:-1, :, :]
-                        cont_length_op = class_assignments[:, :, :, 1:, :] - class_assignments[:, :, :, 0:-1, :]
-                        cont_height_op = class_assignments[:, :, :, :, 1:] - class_assignments[:, :, :, :, 0:-1]
+                        cont_width_op = class_probablilities[:, :, 1:, :, :] - class_probablilities[:, :, 0:-1, :, :]
+                        cont_length_op = class_probablilities[:, :, :, 1:, :] - class_probablilities[:, :, :, 0:-1, :]
+                        cont_height_op = class_probablilities[:, :, :, :, 1:] - class_probablilities[:, :, :, :, 0:-1]
                         continuity_loss_width = self.continuity_loss(cont_width_op, cont_width_target)
                         continuity_loss_length = self.continuity_loss(cont_length_op, cont_length_target)
                         continuity_loss_height = self.continuity_loss(cont_height_op, cont_height_target)
                         avg_continuity_loss = (continuity_loss_width + continuity_loss_length +
                                                continuity_loss_height) / 3
 
-                        loss = (self.sim_loss_coeff * similarity_loss) + (self.cont_loss_coeff * avg_continuity_loss)
+                        loss = similarity_loss + (self.cont_loss_coeff * avg_continuity_loss)
 
                 except Exception as error:
                     self.logger.exception(error)
