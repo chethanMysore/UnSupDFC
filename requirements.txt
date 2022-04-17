@@ -3,4 +3,4 @@ pandas
 torch
 torchio
 scikit-image
--e git+https://www.github.com/nvidia/apex
+-e git+https://www.github.com/nvidia/apex#egg=apex
