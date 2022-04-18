@@ -246,11 +246,11 @@ class Pipeline:
 
                     self.optimizer.step()
 
-                if training_batch_index % 50 == 0:  # Save best metric evaluation weights
-                    write_summary(writer=self.writer_training, index=training_batch_index,
-                                  similarity_loss=similarity_loss.detach().item(),
-                                  continuity_loss=avg_continuity_loss.detach().item(),
-                                  total_loss=loss.detach().item())
+                # if training_batch_index % 50 == 0:  # Save best metric evaluation weights
+                #     write_summary(writer=self.writer_training, index=training_batch_index,
+                #                   similarity_loss=similarity_loss.detach().item(),
+                #                   continuity_loss=avg_continuity_loss.detach().item(),
+                #                   total_loss=loss.detach().item())
                 training_batch_index += 1
 
                 # Initialising the average loss metrics
@@ -370,8 +370,8 @@ class Pipeline:
                          "\n continuity_loss:" + str(total_continuity_loss) +
                          "\n total_loss:" + str(total_loss))
 
-        write_summary(writer, training_index, similarity_loss=total_similarity_loss,
-                      continuity_loss=total_continuity_loss, total_loss=total_loss)
+        # write_summary(writer, training_index, similarity_loss=total_similarity_loss,
+        #               continuity_loss=total_continuity_loss, total_loss=total_loss)
         write_epoch_summary(writer, epoch, similarity_loss=total_similarity_loss,
                             continuity_loss=total_continuity_loss,
                             total_loss=total_loss)
