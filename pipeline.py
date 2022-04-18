@@ -106,9 +106,9 @@ class Pipeline:
                 img=tio.ScalarImage(vol),
                 subjectname=filename,
             )
-            vol_transforms = tio.ToCanonical(), tio.Resample(tio.ScalarImage(vol))
-            transform = tio.Compose(vol_transforms)
-            subject = transform(subject)
+            # vol_transforms = tio.ToCanonical(), tio.Resample(tio.ScalarImage(vol))
+            # transform = tio.Compose(vol_transforms)
+            # subject = transform(subject)
             subjects.append(subject)
 
         if get_subjects_only:

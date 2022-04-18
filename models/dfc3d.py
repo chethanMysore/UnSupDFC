@@ -79,7 +79,7 @@ class DFC3D(nn.Module):
 
         # Response map computation using 1D convolution and linear classifier
         self.conv1D = ConvComponent3D(in_channels=self.n_channels, out_channels=self.n_channels, k_size=1, stride=1,
-                                      padding=0)
+                                      padding=0, no_relu=True)
         self.linear_classifier = nn.Linear(in_features=self.n_channels, out_features=num_classes)
         # self.normaliser = nn.BatchNorm3d(num_features=num_classes)
         # self.active = torch.nn.Sigmoid()
