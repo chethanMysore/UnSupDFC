@@ -118,7 +118,7 @@ class Pipeline:
             patches_queue = tio.Queue(
                 subjects_dataset,
                 max_length=(samples_per_epoch // len(subjects)) * 4,
-                samples_per_volume=(samples_per_epoch // len(subjects)) * 2,
+                samples_per_volume=(samples_per_epoch // len(subjects)),
                 sampler=sampler,
                 num_workers=0,
                 start_background=True
