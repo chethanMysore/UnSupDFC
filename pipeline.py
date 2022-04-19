@@ -453,11 +453,11 @@ class Pipeline:
                     df = pd.concat([df, datum], ignore_index=True)
 
                 if save_results:
-                    # save_nifti(result, os.path.join(result_root, subjectname + ".nii.gz"))
+                    save_nifti(result, os.path.join(result_root, subjectname + "_seg.nii.gz"))
 
                     # Create Segmentation Mask from the class prediction
                     segmentation_overlay = create_segmentation_mask(result, self.num_classes)
-                    save_nifti_rgb(segmentation_overlay, os.path.join(result_root, subjectname + "_seg.nii.gz"))
+                    save_nifti_rgb(segmentation_overlay, os.path.join(result_root, subjectname + "_seg_color.nii.gz"))
                     # save_tif_rgb(segmentation_overlay, os.path.join(result_root, subjectname + "_colour.tif"))
                     if label is not None:
                         overlay = create_diff_mask_binary(result, label)
