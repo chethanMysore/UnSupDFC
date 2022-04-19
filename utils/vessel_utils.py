@@ -51,9 +51,9 @@ def write_epoch_summary(writer, index, similarity_loss=0, continuity_loss=0, tot
     Losses: all losses used as metric
     """
     print('Writing Epoch Summary...')
-    writer.add_scalar('SimilarityLoss', similarity_loss, index)
-    writer.add_scalar('ContinuityLoss', continuity_loss, index)
-    writer.add_scalar('TotalLoss', total_loss, index)
+    writer.add_scalar('SimilarityLossPerEpoch', similarity_loss, index)
+    writer.add_scalar('ContinuityLossPerEpoch', continuity_loss, index)
+    writer.add_scalar('TotalLossPerEpoch', total_loss, index)
 
 
 def save_model(checkpoint_path, state, filename='checkpoint'):

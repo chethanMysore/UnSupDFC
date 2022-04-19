@@ -3,4 +3,6 @@ pandas
 torch
 torchio
 scikit-image
+nibabel
+tqdm
 -e git+https://www.github.com/nvidia/apex#egg=apex

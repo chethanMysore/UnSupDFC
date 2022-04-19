@@ -45,7 +45,7 @@ if __name__ == '__main__':
                         default=True,
                         help="To train the model")
     parser.add_argument('-test',
-                        default=False,
+                        default=True,
                         help="To test the model")
     parser.add_argument('-predict',
                         default=False,
@@ -75,6 +75,10 @@ if __name__ == '__main__':
     parser.add_argument("-num_conv",
                         type=int,
                         default=5,
+                        help="Batch size for training")
+    parser.add_argument("-num_classes",
+                        type=int,
+                        default=3,
                         help="Batch size for training")
     parser.add_argument("-batch_size",
                         type=int,
@@ -142,7 +146,7 @@ if __name__ == '__main__':
     test_logger = Logger(MODEL_NAME + '_test', LOGGER_PATH).get_logger()
 
     # models
-    model = DFC3D(num_conv=args.num_conv)
+    model = DFC3D(num_conv=args.num_conv, num_classes=args.num_classes)
     model.cuda()
 
     writer_training = SummaryWriter(TENSORBOARD_PATH_TRAINING)
@@ -169,7 +173,8 @@ if __name__ == '__main__':
             torch.cuda.empty_cache()  # to avoid memory errors
 
         if args.predict:
-            pipeline.predict(predict_logger=test_logger)
+            pipeline.predict(predict_logger=test_logger, image_path=args.predictor_path,
+                             label_path=args.predictor_label_path)
 
     except Exception as error:
         print(error)

@@ -3,18 +3,15 @@
 
 """
 
-import os
-from glob import glob
-
-import numpy as np
 import torch
 import torch.utils.data
 import torchio as tio
 from torch.cuda.amp import GradScaler, autocast
 from tqdm import tqdm
 
-# from evaluation.metrics import (IOU, Dice, FocalTverskyLoss, get_losses, get_metric)
-from utils.vessel_utils import (load_model, load_model_with_amp, save_model, write_summary, write_epoch_summary)
+from evaluation.metrics import (IOU, Dice)
+from utils.results_analyser import *
+from utils.vessel_utils import (load_model, load_model_with_amp, save_model, write_epoch_summary)
 
 __author__ = "Chethan Radhakrishna and Soumick Chatterjee"
 __credits__ = ["Chethan Radhakrishna", "Soumick Chatterjee"]
@@ -43,6 +40,7 @@ class Pipeline:
         self.model_name = cmd_args.model_name
         self.clip_grads = cmd_args.clip_grads
         self.with_apex = cmd_args.apex
+        self.num_classes = cmd_args.num_classes
 
         # image input parameters
         self.patch_size = cmd_args.patch_size
@@ -62,9 +60,9 @@ class Pipeline:
         self.continuity_loss = torch.nn.L1Loss()
 
         # Following metrics can be used to evaluate
-        # self.dice = Dice()
+        self.dice = Dice()
         # self.focalTverskyLoss = FocalTverskyLoss()
-        # self.iou = IOU()
+        self.iou = IOU()
 
         self.LOWEST_LOSS = float('inf')
 
@@ -388,10 +386,100 @@ class Pipeline:
                 'optimizer': self.optimizer.state_dict(),
                 'amp': self.scaler.state_dict()})
 
-    def test(self, test_logger):
+    def test(self, test_logger, test_subjects=None, save_results=True):
         test_logger.debug('Testing...')
-        # TODO: Implement testing model segmentation against test samples against evaluation metrics
 
-    def predict(self, predict_logger):
-        predict_logger.debug('Predicting...')
-        # TODO: Implement logic to get model prediction and create segmentation mask using the prediction
+        if test_subjects is None:
+            test_folder_path = self.DATASET_PATH + '/test/'
+            # test_label_path = self.DATASET_PATH + '/test_label/'
+
+            test_subjects = self.create_tio_sub_ds(vol_path=test_folder_path, get_subjects_only=True,
+                                                   patch_size=self.patch_size, samples_per_epoch=self.samples_per_epoch,
+                                                   stride_depth=self.stride_depth, stride_width=self.stride_width,
+                                                   stride_length=self.stride_length)
+
+        overlap = np.subtract(self.patch_size, (self.stride_length, self.stride_width, self.stride_depth))
+
+        df = pd.DataFrame(columns=["Subject", "Dice", "IoU"])
+        result_root = os.path.join(self.OUTPUT_PATH, self.model_name, "results")
+        os.makedirs(result_root, exist_ok=True)
+
+        self.model.eval()
+
+        with torch.no_grad():
+            for test_subject in test_subjects:
+                if 'label' in test_subject:
+                    label = test_subject['label'][tio.DATA].float().squeeze().numpy()
+                    del test_subject['label']
+                else:
+                    label = None
+                subjectname = test_subject['subjectname']
+                del test_subject['subjectname']
+
+                grid_sampler = tio.inference.GridSampler(
+                    test_subject,
+                    self.patch_size,
+                    overlap,
+                )
+                aggregator = tio.inference.GridAggregator(grid_sampler, overlap_mode="average")
+                patch_loader = torch.utils.data.DataLoader(grid_sampler, batch_size=self.batch_size, shuffle=False,
+                                                           num_workers=self.num_worker)
+
+                for index, patches_batch in enumerate(tqdm(patch_loader)):
+                    local_batch = self.normaliser(patches_batch['img'][tio.DATA].float().cuda())
+                    locations = patches_batch[tio.LOCATION]
+
+                    local_batch = torch.movedim(local_batch, -1, -3)
+
+                    with autocast(enabled=self.with_apex):
+                        normalised_res_map = self.model(local_batch)
+                        ignore, class_assignments = torch.max(normalised_res_map, 1)
+
+                        # Propogate the class probabilities to pixels/voxels
+                        local_batch_shape = local_batch.shape
+                        class_prediction = class_assignments.reshape(local_batch_shape).float()
+                        output = torch.movedim(class_prediction, -3, -1).type(local_batch.type())
+                        aggregator.add_batch(output, locations)
+
+                predicted = aggregator.get_output_tensor().squeeze().numpy()
+
+                result = predicted.astype(np.float32)
+
+                if label is not None:
+                    datum = {"Subject": subjectname}
+                    dice3d = dice(result, label)
+                    iou3d = iou(result, label)
+                    datum = pd.DataFrame.from_dict({**datum, "Dice": [dice3d], "IoU": [iou3d]})
+                    df = pd.concat([df, datum], ignore_index=True)
+
+                if save_results:
+                    # save_nifti(result, os.path.join(result_root, subjectname + ".nii.gz"))
+
+                    # Create Segmentation Mask from the class prediction
+                    segmentation_overlay = create_segmentation_mask(result, self.num_classes)
+                    save_nifti_rgb(segmentation_overlay, os.path.join(result_root, subjectname + "_seg.nii.gz"))
+                    # save_tif_rgb(segmentation_overlay, os.path.join(result_root, subjectname + "_colour.tif"))
+                    if label is not None:
+                        overlay = create_diff_mask_binary(result, label)
+                        save_tif_rgb(overlay, os.path.join(result_root, subjectname + "_colour.tif"))
+
+                # test_logger.info("Testing " + subjectname + "..." +
+                #                  "\n Dice:" + str(dice3d) +
+                #                  "\n JacardIndex:" + str(iou3d))
+
+        # df.to_excel(os.path.join(result_root, "Results_Main.xlsx"))
+
+    def predict(self, image_path, label_path, predict_logger):
+        image_name = os.path.basename(image_path).split('.')[0]
+
+        sub_dict = {
+            "img": tio.ScalarImage(image_path),
+            "subjectname": image_name,
+        }
+
+        if bool(label_path):
+            sub_dict["label"] = tio.LabelMap(label_path)
+
+        subject = tio.Subject(**sub_dict)
+
+        self.test(predict_logger, test_subjects=[subject], save_results=True)
