@@ -45,7 +45,7 @@ if __name__ == '__main__':
                         default=True,
                         help="To train the model")
     parser.add_argument('-test',
-                        default=True,
+                        default=False,
                         help="To test the model")
     parser.add_argument('-predict',
                         default=False,
