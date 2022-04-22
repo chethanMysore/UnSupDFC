@@ -177,16 +177,15 @@ class Pipeline:
                 # Clear gradients
                 self.optimizer.zero_grad()
 
-                res_map_shape = (self.batch_size, self.patch_size, self.patch_size, self.patch_size,
-                                 self.num_classes)
+                res_map_shape = local_batch.shape
                 cont_width_target = torch.zeros(
-                    (self.batch_size, self.patch_size - 1, self.patch_size, self.patch_size,
+                    (res_map_shape[0], res_map_shape[2] - 1, res_map_shape[3], res_map_shape[4],
                      self.num_classes)).float().cuda()
                 cont_length_target = torch.zeros(
-                    (self.batch_size, self.patch_size, self.patch_size - 1, self.patch_size,
+                    (res_map_shape[0], res_map_shape[2], res_map_shape[3] - 1, res_map_shape[4],
                      self.num_classes)).float().cuda()
                 cont_height_target = torch.zeros(
-                    (self.batch_size, self.patch_size, self.patch_size, self.patch_size - 1,
+                    (res_map_shape[0], res_map_shape[2], res_map_shape[3], res_map_shape[4] - 1,
                      self.num_classes)).float().cuda()
 
                 # try:
@@ -316,16 +315,15 @@ class Pipeline:
                 local_batch = Pipeline.normaliser(patches_batch['img'][tio.DATA].float().cuda())
                 local_batch = torch.movedim(local_batch, -1, -3)
 
-                res_map_shape = (self.batch_size, self.patch_size, self.patch_size, self.patch_size,
-                                 self.num_classes)
+                res_map_shape = local_batch.shape
                 cont_width_target = torch.zeros(
-                    (self.batch_size, self.patch_size - 1, self.patch_size, self.patch_size,
+                    (res_map_shape[0], res_map_shape[2] - 1, res_map_shape[3], res_map_shape[4],
                      self.num_classes)).float().cuda()
                 cont_length_target = torch.zeros(
-                    (self.batch_size, self.patch_size, self.patch_size - 1, self.patch_size,
+                    (res_map_shape[0], res_map_shape[2], res_map_shape[3] - 1, res_map_shape[4],
                      self.num_classes)).float().cuda()
                 cont_height_target = torch.zeros(
-                    (self.batch_size, self.patch_size, self.patch_size, self.patch_size - 1,
+                    (res_map_shape[0], res_map_shape[2], res_map_shape[3], res_map_shape[4] - 1,
                      self.num_classes)).float().cuda()
 
                 try:
