@@ -77,10 +77,9 @@ class DFC3D(nn.Module):
             self.n_channels = self.n_channels * 2
             # If MaxPool is necessary or any transitions add it here
 
-        # Response map computation using 1D convolution and linear classifier
-        self.conv1D = ConvComponent3D(in_channels=self.n_channels, out_channels=self.n_channels, k_size=1, stride=1,
+        # Response map computation using 1D convolution
+        self.conv1D = ConvComponent3D(in_channels=self.n_channels, out_channels=num_classes, k_size=1, stride=1,
                                       padding=0, no_relu=True)
-        self.linear_classifier = nn.Linear(in_features=self.n_channels, out_features=num_classes)
         # self.normaliser = nn.BatchNorm3d(num_features=num_classes)
         # self.active = torch.nn.Sigmoid()
 
@@ -93,10 +92,5 @@ class DFC3D(nn.Module):
             comp_op = comp(comp_op)
 
         # Response map computation using 1D convolution
-        comp_op = self.conv1D(comp_op)
-
-        # Apply Linear Classifier to compute the response map
-        comp_op = comp_op.view(-1, self.n_channels)
-        comp_op = self.linear_classifier(comp_op)
-        res_map = torch.nn.functional.softmax(comp_op)
+        res_map = self.conv1D(comp_op)
         return res_map
