@@ -200,7 +200,9 @@ class Pipeline:
                     similarity_loss = self.similarity_loss(normalised_res_map, class_assignments)
 
                     # Propogate the class probabilities to pixels/voxels
-                    class_probablilities = normalised_res_map.reshape(res_map_shape).float()
+                    class_probablilities = normalised_res_map.reshape((res_map_shape[0], res_map_shape[2],
+                                                                       res_map_shape[3], res_map_shape[4],
+                                                                       self.num_classes)).float()
 
                     # Spatial Continuity comparison
                     cont_width_op = class_probablilities[:, 1:, :, :, :] - class_probablilities[:, 0:-1, :, :, :]
@@ -338,7 +340,9 @@ class Pipeline:
                         similarity_loss = self.similarity_loss(normalised_res_map, class_assignments)
 
                         # Propogate the class probabilities to pixels/voxels
-                        class_probablilities = normalised_res_map.reshape(res_map_shape).float()
+                        class_probablilities = normalised_res_map.reshape((res_map_shape[0], res_map_shape[2],
+                                                                           res_map_shape[3], res_map_shape[4],
+                                                                           self.num_classes)).float()
 
                         # Spatial Continuity comparison
                         cont_width_op = class_probablilities[:, 1:, :, :, :] - class_probablilities[:, 0:-1, :, :, :]
