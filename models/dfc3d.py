@@ -77,6 +77,8 @@ class DFC3D(nn.Module):
             self.n_channels = self.n_channels * 2
             # If MaxPool is necessary or any transitions add it here
 
+        self.conv_blocks = nn.Sequential(*self.conv_components)
+
         # Response map computation using 1D convolution
         self.conv1D = ConvComponent3D(in_channels=self.n_channels, out_channels=num_classes, k_size=1, stride=1,
                                       padding=0, no_relu=True)
@@ -88,8 +90,7 @@ class DFC3D(nn.Module):
         comp_op = self.conv_block1(x)
 
         # m-1 such convolution blocks
-        for index, comp in enumerate(self.conv_components):
-            comp_op = comp(comp_op)
+        comp_op = self.conv_blocks(comp_op)
 
         # Response map computation using 1D convolution
         res_map = self.conv1D(comp_op)
