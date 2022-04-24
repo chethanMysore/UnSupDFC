@@ -36,19 +36,11 @@ def create_diff_mask_binary(predicted, label):
     return rgb_image
 
 
-def create_segmentation_mask(predicted, num_classes=3):
+def create_segmentation_mask(predicted, colors, num_classes=3):
     """
         Method creates a segmentation mask for identified classes for the class predictions
         predicted : 2D mip with class predictions
         """
-
-    # Define colors
-    colors = {'segment0': np.array([255, 255, 255], dtype=np.uint8),  # white
-              'segment1': np.array([255, 0, 0], dtype=np.uint8),  # red
-              'segment2': np.array([0, 0, 255], dtype=np.uint8),  # blue
-              'segment3': np.array([0, 255, 0], dtype=np.uint8),  # green
-              'segment4': np.array([255, 255, 0], dtype=np.uint8),  # yellow
-              'background': np.array([0, 0, 0], dtype=np.uint8)}  # black
 
     # Make RGB array, pre-filled with black(background)
     rgb_image = np.zeros((*predicted.shape, 3), dtype=np.uint8) + colors['background']
@@ -56,7 +48,7 @@ def create_segmentation_mask(predicted, num_classes=3):
     # Overwrite with red where threshold exceeded, i.e. where mask is True
     for segment in range(num_classes):
         segment_mask = np.where(predicted == segment)
-        if segment_mask is not None and len(segment_mask) == len(predicted.shape):
+        if segment_mask is not None:
             rgb_image[segment_mask] = colors['segment'+str(segment)]
 
     return rgb_image

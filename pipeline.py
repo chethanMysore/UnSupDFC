@@ -211,7 +211,7 @@ class Pipeline:
                     continuity_loss_width = self.continuity_loss(cont_width_op, cont_width_target)
                     continuity_loss_length = self.continuity_loss(cont_length_op, cont_length_target)
                     continuity_loss_height = self.continuity_loss(cont_height_op, cont_height_target)
-                    avg_continuity_loss = (continuity_loss_width + continuity_loss_length + continuity_loss_height) / 3
+                    avg_continuity_loss = (continuity_loss_width + continuity_loss_length + continuity_loss_height)
 
                     loss = similarity_loss + (self.cont_loss_coeff * avg_continuity_loss)
 
@@ -351,9 +351,8 @@ class Pipeline:
                         continuity_loss_width = self.continuity_loss(cont_width_op, cont_width_target)
                         continuity_loss_length = self.continuity_loss(cont_length_op, cont_length_target)
                         continuity_loss_height = self.continuity_loss(cont_height_op, cont_height_target)
-                        avg_continuity_loss = (
-                                                      continuity_loss_width + continuity_loss_length +
-                                                      continuity_loss_height) / 3
+                        avg_continuity_loss = (continuity_loss_width + continuity_loss_length +
+                                               continuity_loss_height)
 
                         loss = similarity_loss + (self.cont_loss_coeff * avg_continuity_loss)
 
@@ -415,7 +414,12 @@ class Pipeline:
         df = pd.DataFrame(columns=["Subject", "Dice", "IoU"])
         result_root = os.path.join(self.OUTPUT_PATH, self.model_name, "results")
         os.makedirs(result_root, exist_ok=True)
-
+        colors = {'segment0': np.array([0, 0, 255], dtype=np.uint8),  # blue
+                  'segment1': np.array([255, 0, 0], dtype=np.uint8),  # red
+                  'segment2': np.array([255, 255, 255], dtype=np.uint8),  # white
+                  'segment3': np.array([0, 255, 0], dtype=np.uint8),  # green
+                  'segment4': np.array([255, 255, 0], dtype=np.uint8),  # yellow
+                  'background': np.array([0, 0, 0], dtype=np.uint8)}  # black
         self.model.eval()
 
         with torch.no_grad():
@@ -442,20 +446,32 @@ class Pipeline:
                     locations = patches_batch[tio.LOCATION]
 
                     local_batch = torch.movedim(local_batch, -1, -3)
+                    res_map_shape = local_batch.shape
 
                     with autocast(enabled=self.with_apex):
                         normalised_res_map = self.model(local_batch)
+                        normalised_res_map = torch.movedim(normalised_res_map, -3, -1)
+                        normalised_res_map = torch.movedim(normalised_res_map, 1, -1)
+                        normalised_res_map = normalised_res_map.contiguous().view(-1, self.num_classes)
                         ignore, class_assignments = torch.max(normalised_res_map, 1)
+                        # seg3_indices = torch.where(class_assignments == 3)
+                        # class_assignments[seg3_indices] = 0
+                        # class_assignments = class_assignments.detach().cpu().numpy()
+                        # class_assignments_rgb = torch.from_numpy(create_segmentation_mask(class_assignments, colors,
+                        #                                                                   self.num_classes-1)).cuda()
+                        # class_assignments_rgb = np.array([])
+                        # class_assignments_rgb = torch.from_numpy(np.array([label_colours[c % self.num_classes]
+                        #                                                    for c in class_assignments])).cuda()
+                        # class_pred_heat_map = class_assignments_rgb.reshape((res_map_shape[0], res_map_shape[2],
+                        #                                                      res_map_shape[3], res_map_shape[4],
+                        #                                                      3))
+                        class_pred_heat_map = class_assignments.reshape((res_map_shape[0], res_map_shape[2],
+                                                                         res_map_shape[3], res_map_shape[4], 1))
+                        class_pred_heat_map = torch.movedim(class_pred_heat_map, -1, 1)
+                        aggregator.add_batch(class_pred_heat_map, locations)
 
-                        # Propogate the class probabilities to pixels/voxels
-                        local_batch_shape = local_batch.shape
-                        class_prediction = class_assignments.reshape(local_batch_shape).float()
-                        output = torch.movedim(class_prediction, -3, -1).type(local_batch.type())
-                        aggregator.add_batch(output, locations)
-
-                predicted = aggregator.get_output_tensor().squeeze().numpy()
-
-                result = predicted.astype(np.float32)
+                predicted = aggregator.get_output_tensor().squeeze()
+                result = predicted.numpy().astype(np.uint8)
 
                 if label is not None:
                     datum = {"Subject": subjectname}
@@ -465,15 +481,15 @@ class Pipeline:
                     df = pd.concat([df, datum], ignore_index=True)
 
                 if save_results:
-                    save_nifti(result, os.path.join(result_root, subjectname + "_seg.nii.gz"))
+                    save_nifti(result, os.path.join(result_root, subjectname + "_DFC_seg.nii.gz"))
 
                     # Create Segmentation Mask from the class prediction
-                    segmentation_overlay = create_segmentation_mask(result, self.num_classes)
-                    save_nifti_rgb(segmentation_overlay, os.path.join(result_root, subjectname + "_seg_color.nii.gz"))
+                    # segmentation_overlay = create_segmentation_mask(predicted, self.num_classes)
+                    # save_nifti_rgb(segmentation_overlay, os.path.join(result_root, subjectname + "_DFC_seg_color.nii.gz"))
                     # save_tif_rgb(segmentation_overlay, os.path.join(result_root, subjectname + "_colour.tif"))
-                    if label is not None:
-                        overlay = create_diff_mask_binary(result, label)
-                        save_tif_rgb(overlay, os.path.join(result_root, subjectname + "_colour.tif"))
+                    # if label is not None:
+                    #     overlay = create_diff_mask_binary(predicted, label)
+                    #     save_tif_rgb(overlay, os.path.join(result_root, subjectname + "_colour.tif"))
 
                 # test_logger.info("Testing " + subjectname + "..." +
                 #                  "\n Dice:" + str(dice3d) +
