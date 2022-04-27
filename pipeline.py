@@ -211,7 +211,7 @@ class Pipeline:
                     continuity_loss_width = self.continuity_loss(cont_width_op, cont_width_target)
                     continuity_loss_length = self.continuity_loss(cont_length_op, cont_length_target)
                     continuity_loss_height = self.continuity_loss(cont_height_op, cont_height_target)
-                    avg_continuity_loss = (continuity_loss_width + continuity_loss_length + continuity_loss_height)
+                    avg_continuity_loss = (continuity_loss_width + continuity_loss_length + continuity_loss_height) / 3
 
                     loss = similarity_loss + (self.cont_loss_coeff * avg_continuity_loss)
 
@@ -352,7 +352,7 @@ class Pipeline:
                         continuity_loss_length = self.continuity_loss(cont_length_op, cont_length_target)
                         continuity_loss_height = self.continuity_loss(cont_height_op, cont_height_target)
                         avg_continuity_loss = (continuity_loss_width + continuity_loss_length +
-                                               continuity_loss_height)
+                                               continuity_loss_height) / 3
 
                         loss = similarity_loss + (self.cont_loss_coeff * avg_continuity_loss)
 
