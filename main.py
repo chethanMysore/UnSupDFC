@@ -78,7 +78,7 @@ if __name__ == '__main__':
                         help="Batch size for training")
     parser.add_argument("-num_classes",
                         type=int,
-                        default=3,
+                        default=10,
                         help="Batch size for training")
     parser.add_argument("-batch_size",
                         type=int,
@@ -86,11 +86,11 @@ if __name__ == '__main__':
                         help="Batch size for training")
     parser.add_argument("-num_epochs",
                         type=int,
-                        default=50,
+                        default=20,
                         help="Number of epochs for training")
     parser.add_argument("-learning_rate",
                         type=float,
-                        default=0.001,
+                        default=0.0001,
                         help="Learning rate")
     parser.add_argument("-patch_size",
                         type=int,

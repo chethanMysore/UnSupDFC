@@ -118,7 +118,7 @@ class Pipeline:
             patches_queue = tio.Queue(
                 subjects_dataset,
                 max_length=(samples_per_epoch // len(subjects)) * 4,
-                samples_per_volume=(samples_per_epoch // len(subjects)) * 2,
+                samples_per_volume=(samples_per_epoch // len(subjects)),
                 sampler=sampler,
                 num_workers=0,
                 start_background=True
@@ -213,7 +213,7 @@ class Pipeline:
                     continuity_loss_height = self.continuity_loss(cont_height_op, cont_height_target)
                     avg_continuity_loss = (continuity_loss_width + continuity_loss_length + continuity_loss_height) / 3
 
-                    loss = similarity_loss + (self.cont_loss_coeff * avg_continuity_loss)
+                    loss = (self.sim_loss_coeff * similarity_loss) + (self.cont_loss_coeff * avg_continuity_loss)
 
                 # except Exception as error:
                 #     self.logger.exception(error)
@@ -354,7 +354,7 @@ class Pipeline:
                         avg_continuity_loss = (continuity_loss_width + continuity_loss_length +
                                                continuity_loss_height) / 3
 
-                        loss = similarity_loss + (self.cont_loss_coeff * avg_continuity_loss)
+                        loss = (self.sim_loss_coeff * similarity_loss) + (self.cont_loss_coeff * avg_continuity_loss)
 
                 except Exception as error:
                     self.logger.exception(error)
